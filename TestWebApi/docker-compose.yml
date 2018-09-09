@@ -1,0 +1,44 @@
+version: '3.4'
+
+services:
+  app:
+    build:
+      context: ./TestWebApi
+      dockerfile: Dockerfile
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    - ASPNETCORE_URLS=http://+:7000
+    expose:
+      - "7000"
+    networks:
+      main:
+        aliases:
+          - app
+
+  app2:
+    build:
+      context: ./TestWebApi2
+      dockerfile: Dockerfile
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    - ASPNETCORE_URLS=http://+:7002
+    expose:
+      - "7002"
+    networks:
+      main:
+        aliases:
+          - app2
+
+  proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "9999:80"
+    networks:
+      main:
+        aliases:
+          - proxy
+
+networks:
+  main:

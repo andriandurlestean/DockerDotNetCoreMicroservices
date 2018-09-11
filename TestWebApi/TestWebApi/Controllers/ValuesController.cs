@@ -4,17 +4,29 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using TestWebApi.Context;
+using TestWebApi.Models;
 
 namespace TestWebApi.Controllers
 {
     [Route("api/[controller]")]
     public class ValuesController : Controller
     {
+        private readonly TestWebApiDbContext _context;
+
+        public ValuesController(TestWebApiDbContext context)
+        {
+            _context = context;
+        }
+
+
         // GET api/values
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IEnumerable<Catalog> Get()
         {
-            return new string[] { "firstService" };
+            var result = _context.Catalogs.ToList();
+
+            return result;
         }
 
         // GET api/values/5

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +11,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
+using RawRabbit.Configuration;
+using RawRabbit.vNext;
+using RawRabbit.vNext.Disposable;
 using TestWebApi.Context;
 using TestWebApi.Models;
 
@@ -33,6 +38,46 @@ namespace TestWebApi
                 options => options.UseSqlServer(connection));
 
             services.AddMvc();
+
+            var busConfig = new RawRabbitConfiguration
+            {
+                Username = "guest",
+                Password = "guest",
+                Port = 5672,
+                VirtualHost = "/",
+                Hostnames = { "rabbitmq" }
+            };
+            var busClient = BusClientFactory.CreateDefault(busConfig);
+
+            services.AddSingleton<IBusClient>(busClient);
+
+            /*            services.AddSingleton<EventBus.RabbitMQ.Interfaces.IRabbitMQPersistentConnection>(sp =>
+                        {
+                            var logger = sp.GetRequiredService<ILogger<RabbitMQPersistentConnection>>();
+
+                            var factory = new ConnectionFactory()
+                            {
+                                HostName = "testwebapi-rabbitmq"
+                            };
+
+                            var retryCount = 5;
+
+                            return new RabbitMQPersistentConnection(factory, logger, retryCount);
+                        });
+
+                        services.AddSingleton<IEventBus, EventBusRabbitMQ>(sp =>
+                        {
+                            var rabbitMQPersistentConnection = sp.GetRequiredService<IRabbitMQPersistentConnection>();
+                            var iLifetimeScope = sp.GetRequiredService<ILifetimeScope>();
+                            var logger = sp.GetRequiredService<ILogger<EventBusRabbitMQ>>();
+                            var eventBusSubcriptionsManager = sp.GetRequiredService<IEventBusSubscriptionsManager>();
+                            var retryCount = 5;
+
+                            return new EventBusRabbitMQ(rabbitMQPersistentConnection, iLifetimeScope, eventBusSubcriptionsManager, logger, "TestWebApi", retryCount);
+                        });
+
+                        services.AddSingleton<IEventBusSubscriptionsManager, EventBusSubscriptionsManager>();*/
+            //services.AddTransient<ProductPriceChangedIntegrationEventHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -69,6 +114,11 @@ namespace TestWebApi
                     }
                 }
             }
-        }
+
+           
+
+            //var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+                //eventBus.Subscribe<OrderStatusChangedToStockConfirmedIntegrationEvent, OrderStatusChangedToStockConfirmedIntegrationEventHandler>();
+            }
     }
 }

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Common;
 using Microsoft.AspNetCore.Mvc;
+using RawRabbit.Configuration.Request;
+using RawRabbit.vNext.Disposable;
 using TestWebApi.Context;
 using TestWebApi.Models;
 
@@ -13,10 +16,12 @@ namespace TestWebApi.Controllers
     public class ValuesController : Controller
     {
         private readonly TestWebApiDbContext _context;
+        private readonly IBusClient _client;
 
-        public ValuesController(TestWebApiDbContext context)
+        public ValuesController(TestWebApiDbContext context, IBusClient client)
         {
             _context = context;
+            _client = client;
         }
 
 
@@ -38,10 +43,13 @@ namespace TestWebApi.Controllers
             return await result.Content.ReadAsStringAsync();
         }
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody]string value)
+        [Route("send")]
+        [HttpGet]
+        public async Task<string> TestEvent()
         {
+            Action<IRequestConfigurationBuilder> requestBuilder = (ctx) => ctx.WithExchange(xfg => xfg.WithName("testwebapi")); //.WithRoutingKey("mymessage"));
+            var response = await _client.RequestAsync<BasicMessage, BasicResponse>(new BasicMessage {Prop = "FROM FIRST" }, configuration: requestBuilder);
+            return response.Result;
         }
 
         // PUT api/values/5

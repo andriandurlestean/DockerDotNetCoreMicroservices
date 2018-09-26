@@ -4,12 +4,18 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using RawRabbit.vNext.Disposable;
 
 namespace TestWebApi2.Controllers
 {
     [Route("api/[controller]")]
     public class ValuesController : Controller
     {
+        public ValuesController(IBusClient client)
+        {
+            
+        }
+
         // GET api/values
         [HttpGet]
         public IEnumerable<string> Get()

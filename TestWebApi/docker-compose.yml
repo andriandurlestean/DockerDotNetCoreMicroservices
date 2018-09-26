@@ -3,15 +3,20 @@ version: '3.4'
 services:
   app:
     build:
-      context: ./TestWebApi
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: TestWebApi/Dockerfile
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
     - ASPNETCORE_URLS=http://+:7000
     expose:
       - "7000"
+    ports:
+      - "7220:22"
+      - "9000:7000"
+    restart: on-failure:5
     depends_on:
       - db
+      - rabbitmq
     networks:
       main:
         aliases:
@@ -19,13 +24,18 @@ services:
 
   app2:
     build:
-      context: ./TestWebApi2
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: TestWebApi2/Dockerfile
     environment:
     - ASPNETCORE_ENVIRONMENT=Development
     - ASPNETCORE_URLS=http://+:7002
     expose:
       - "7002"
+    ports:
+      - "7222:22"
+    depends_on:
+      - rabbitmq
+    restart: on-failure:5
     networks:
       main:
         aliases:
@@ -38,7 +48,8 @@ services:
     ports:
       - "9999:80"
     depends_on:
-        - app
+      - app
+      - app2
     networks:
       main:
         aliases:
@@ -55,6 +66,18 @@ services:
       main:
         aliases:
           - db
+  
+  rabbitmq:
+    image: "rabbitmq:3-management-alpine"
+    expose:
+      - "5672"
+    ports:
+      - "15673:15672"  # Important: In a production environment your should remove the external port
+      - "5673:5672"    # Important: In a production environment your should remove the external port
+    networks:
+      main:
+        aliases:
+          - rabbitmq
 
 networks:
   main:

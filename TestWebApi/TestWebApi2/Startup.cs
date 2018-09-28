@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Net.Sockets;
 using Common;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
 using RabbitMQ.Client;
 using RawRabbit.Configuration;
 using RawRabbit.vNext;
@@ -28,18 +31,25 @@ namespace TestWebApi2
         {
             services.AddMvc();
 
-            var busConfig = new RawRabbitConfiguration
-            {
-                Username = "guest",
-                Password = "guest",
-                Port = 5672,
-                VirtualHost = "/",
-                Hostnames = { "rabbitmq" },
-                
-            };
-            var busClient = BusClientFactory.CreateDefault(busConfig);
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetry(10, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (ex, time) =>
+                {
+                    Debug.WriteLine("RABBIT MQ FAILED");
+                });
 
-            services.AddSingleton<IBusClient>(busClient);
+            policy.Execute(() =>
+            {
+                var busConfig = new RawRabbitConfiguration
+                {
+                    Username = "guest",
+                    Password = "guest",
+                    Port = 5672,
+                    VirtualHost = "/",
+                    Hostnames = { "rabbitmq" }
+                };
+                var busClient = BusClientFactory.CreateDefault(busConfig);
+                services.AddSingleton<IBusClient>(busClient);
+            });
 
         }
 

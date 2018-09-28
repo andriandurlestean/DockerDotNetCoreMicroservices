@@ -12,7 +12,6 @@ services:
       - "7000"
     ports:
       - "7220:22"
-      - "9000:7000"
     restart: on-failure:5
     depends_on:
       - db
@@ -43,8 +42,8 @@ services:
 
   proxy:
     build:
-      context: ./nginx
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: nginx/Dockerfile
     ports:
       - "9999:80"
     depends_on:

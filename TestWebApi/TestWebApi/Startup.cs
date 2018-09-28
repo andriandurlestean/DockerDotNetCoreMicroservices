@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -11,7 +13,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 using RawRabbit.Configuration;
 using RawRabbit.vNext;
 using RawRabbit.vNext.Disposable;
@@ -37,19 +41,29 @@ namespace TestWebApi
             services.AddDbContext<TestWebApiDbContext>(
                 options => options.UseSqlServer(connection));
 
-            services.AddMvc();
+            services.AddMvc(); 
 
-            var busConfig = new RawRabbitConfiguration
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetry(10, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (ex, time) =>
+                {
+                    Debug.WriteLine("RABBIT MQ FAILED");
+                });
+
+            policy.Execute(() =>
             {
-                Username = "guest",
-                Password = "guest",
-                Port = 5672,
-                VirtualHost = "/",
-                Hostnames = { "rabbitmq" }
-            };
-            var busClient = BusClientFactory.CreateDefault(busConfig);
+                var busConfig = new RawRabbitConfiguration
+                {
+                    Username = "guest",
+                    Password = "guest",
+                    Port = 5672,
+                    VirtualHost = "/",
+                    Hostnames = {"rabbitmq"}
+                };
+                var busClient = BusClientFactory.CreateDefault(busConfig);
+                services.AddSingleton<IBusClient>(busClient);
+            });
 
-            services.AddSingleton<IBusClient>(busClient);
+
 
             /*            services.AddSingleton<EventBus.RabbitMQ.Interfaces.IRabbitMQPersistentConnection>(sp =>
                         {

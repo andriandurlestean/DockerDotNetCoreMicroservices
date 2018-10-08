@@ -9,3 +9,7 @@
 /EventBus/bin
 /TestWebApi/Common/obj
 /TestWebApi/Common/bin
+/TestWebApi/UnitTests/obj
+/TestWebApi/UnitTests/bin
+/TestWebApi/nginx/obj
+/TestWebApi/bin
